@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "66778451181",
+    "firebase_url": "https://apex-7083d.firebaseio.com",
+    "project_id": "apex-7083d",
+    "storage_bucket": "apex-7083d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:66778451181:android:a57b43e5851c9b174010e4",
+        "android_client_info": {
+          "package_name": "com.example.apex"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "66778451181-5koa45igru4cnfqfql4q9n4h998aovgr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8ny0rQUYR8D6eWmqdVtu85QJjYmBcPMM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "66778451181-5koa45igru4cnfqfql4q9n4h998aovgr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
