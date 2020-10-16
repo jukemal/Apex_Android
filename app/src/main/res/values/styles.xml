@@ -1,23 +1,22 @@
 <resources>
+
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
 
-        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Demo.BottomSheetDialog</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.CustomBottomSheetDialog</item>
     </style>
 
-    <style
-        name="ThemeOverlay.Demo.BottomSheetDialog"
-        parent="@style/ThemeOverlay.MaterialComponents.BottomSheetDialog">
-        <item name="bottomSheetStyle">@style/Widget.Demo.BottomSheet</item>
+    <style name="ThemeOverlay.CustomBottomSheetDialog" parent="@style/ThemeOverlay.MaterialComponents.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.CustomBottomSheet</item>
     </style>
 
-    <style name="Widget.Demo.BottomSheet" parent="Widget.MaterialComponents.BottomSheet">
-        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.Demo</item>
+    <style name="Widget.CustomBottomSheet" parent="Widget.MaterialComponents.BottomSheet">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.Custom</item>
     </style>
 
-    <style name="ShapeAppearanceOverlay.Demo" parent="">
+    <style name="ShapeAppearanceOverlay.Custom" parent="">
         <item name="cornerSize">30dp</item>
         <item name="cornerFamily">rounded</item>
     </style>

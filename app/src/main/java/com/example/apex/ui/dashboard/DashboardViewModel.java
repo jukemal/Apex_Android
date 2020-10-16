@@ -1,19 +1,14 @@
 package com.example.apex.ui.dashboard;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
+import android.app.Application;
 
-public class DashboardViewModel extends ViewModel {
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 
-    private MutableLiveData<String> mText;
+public class DashboardViewModel extends AndroidViewModel {
 
-    public DashboardViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is dashboard fragment");
-    }
 
-    public LiveData<String> getText() {
-        return mText;
+    public DashboardViewModel(@NonNull Application application) {
+        super(application);
     }
 }

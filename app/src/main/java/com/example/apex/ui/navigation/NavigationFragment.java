@@ -1,4 +1,4 @@
-package com.example.apex.ui.home;
+package com.example.apex.ui.navigation;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,12 +10,12 @@ import androidx.fragment.app.Fragment;
 
 import com.example.apex.R;
 
-public class HomeFragment extends Fragment {
+public class NavigationFragment extends Fragment {
 
-    private HomeViewModel homeViewModel;
+    private NavigationViewModel homeViewModel;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_home, container, false);
+        View root = inflater.inflate(R.layout.fragment_navigation, container, false);
         return root;
     }
 }
