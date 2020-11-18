@@ -10,6 +10,23 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnCurrentLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="86dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/ic_baseline_location_searching_24"
+            android:elevation="8dp"
+            app:pressedTranslationZ="16dp"
+            app:backgroundTint="#F44336"
+            android:scaleType="center"
+            app:maxImageSize="35dp"
+            app:tint="#FFFFFF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:contentDescription="Current Location" />
+
         <LinearLayout
             android:id="@+id/linear_layout"
             android:layout_width="match_parent"
@@ -33,7 +50,7 @@
                     android:text="From : " />
 
                 <EditText
-                    android:id="@+id/txt_to"
+                    android:id="@+id/txt_from"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="4"
@@ -55,19 +72,21 @@
                     android:text="To : " />
 
                 <EditText
-                    android:id="@+id/txt_from"
+                    android:id="@+id/txt_to"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="4"
                     android:autofillHints="To"
-                    android:inputType="text" />
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:text="To" />
             </LinearLayout>
 
         </LinearLayout>
 
-
         <fragment
-            android:id="@+id/map"
+            android:id="@+id/map_navigation"
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="0dp"

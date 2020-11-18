@@ -1,7 +1,6 @@
 package com.example.apex;
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -20,9 +19,7 @@ public class LoginActivity extends AppCompatActivity {
         ActivityLoginBinding binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
-        }
+        getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
 
         binding.buttonLogin.setOnClickListener(v -> {
             binding.buttonLogin.showLoading();
