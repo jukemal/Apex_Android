@@ -1,6 +1,5 @@
 package com.example.apex.ui.parking;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -15,10 +14,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.akexorcist.googledirection.DirectionCallback;
 import com.akexorcist.googledirection.GoogleDirection;
@@ -28,6 +27,8 @@ import com.akexorcist.googledirection.model.Route;
 import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.apex.R;
 import com.example.apex.databinding.FragmentParkingBinding;
+import com.example.apex.mics.LocationInterface;
+import com.example.apex.viewadapters.LocationRecyclerViewAdapter;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -39,21 +40,26 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
-import com.google.android.libraries.places.api.model.PlaceLikelihood;
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
-import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import timber.log.Timber;
 
@@ -76,7 +82,8 @@ public class ParkingFragment extends Fragment {
     private boolean locationPermissionGranted;
 
     private Location lastKnownLocation;
-    private LatLng currentLocation;
+
+    private Place currentPlace;
 
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
@@ -88,6 +95,18 @@ public class ParkingFragment extends Fragment {
     private LatLng[] likelyPlaceLatLngs;
 
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
+
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+    private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+
+    private final DocumentReference documentReferenceCurrentUser = db.collection("users")
+            .document(Objects.requireNonNull(firebaseAuth.getCurrentUser()).getUid());
+
+    private final CollectionReference collectionReferenceLocation = documentReferenceCurrentUser
+            .collection("saved_locations");
+
+    private LocationRecyclerViewAdapter locationRecyclerViewAdapter;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentParkingBinding.inflate(inflater, container, false);
@@ -142,24 +161,84 @@ public class ParkingFragment extends Fragment {
             getDeviceLocation();
         });
 
+        binding.bottomSheet.recyclerviewParking.setHasFixedSize(true);
+        binding.bottomSheet.recyclerviewParking.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false));
+        locationRecyclerViewAdapter = new LocationRecyclerViewAdapter(requireContext(), new LocationInterface() {
+            @Override
+            public void setPath(LatLng latLng) {
+                requestDirection(latLng);
+            }
+
+            @Override
+            public void hideBottomSheet() {
+                BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.getRoot());
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            }
+        });
+        binding.bottomSheet.recyclerviewParking.setAdapter(locationRecyclerViewAdapter);
+
+        getSavedLocations();
+
         binding.btnCurrentLocation.setOnClickListener(v -> getDeviceLocation());
 
         binding.btnLocationSave.setOnClickListener(v -> {
-//            map.addPolyline(new PolylineOptions().add(
-//                    new LatLng(6.82116915076, 79.8925148827),
-//                    new LatLng(6.82116915076, 79.95)
-//            ));
+            if (currentPlace != null) {
+                MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
 
-//            map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(6.82116915076,79.92),13));
+                builder.setMessage("Do you want to save current location?")
+                        .setTitle("Save Location")
+                        .setPositiveButton("Yes", (dialogInterface, i) -> {
+                            com.example.apex.models.Location location = com.example.apex.models.Location.builder()
+                                    .placeId(currentPlace.getId())
+                                    .name(currentPlace.getName())
+                                    .latitude(currentPlace.getLatLng().latitude)
+                                    .longitude(currentPlace.getLatLng().longitude)
+                                    .build();
+
+                            collectionReferenceLocation.add(location)
+                                    .addOnSuccessListener(documentReference -> {
+                                        Toast.makeText(requireContext(), "Successfully Saved.", Toast.LENGTH_SHORT).show();
+                                        currentPlace = null;
+                                        getSavedLocations();
+                                    }).addOnFailureListener(e -> {
+                                Toast.makeText(requireContext(), "Error Saving Location. Try Again", Toast.LENGTH_SHORT).show();
+                            });
+                        }).setNegativeButton("No", (dialogInterface, i) -> dialogInterface.cancel());
+
+                builder.show();
+
+            } else {
+                Toast.makeText(requireContext(), "Select a Place to Save.", Toast.LENGTH_SHORT).show();
+            }
         });
 
         binding.txtSearch.setOnClickListener(v -> {
             List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
 
             Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
+                    .setCountry("LK")
                     .build(requireContext());
             startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
         });
+    }
+
+    private void getSavedLocations() {
+        collectionReferenceLocation.orderBy("timestamp", Query.Direction.DESCENDING).get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<com.example.apex.models.Location> locationList = new ArrayList<>();
+
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            com.example.apex.models.Location location = documentSnapshot.toObject(com.example.apex.models.Location.class);
+
+                            locationList.add(location);
+                        }
+
+                        locationRecyclerViewAdapter.setLocationList(locationList);
+                    } else {
+                        Toast.makeText(requireContext(), "Error getting Locations.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override
@@ -168,7 +247,7 @@ public class ParkingFragment extends Fragment {
             if (resultCode == RESULT_OK) {
                 Place place = Autocomplete.getPlaceFromIntent(data);
                 Timber.e("Place: " + place.getName() + ", " + place.getId() + ", " + place.getLatLng());
-                currentLocation = place.getLatLng();
+                currentPlace = place;
                 binding.txtSearch.setText(place.getName());
                 moveCameraToLocation(place.getLatLng());
             } else if (resultCode == AutocompleteActivity.RESULT_ERROR) {
@@ -201,6 +280,7 @@ public class ParkingFragment extends Fragment {
                         public void onDirectionSuccess(@Nullable Direction direction) {
                             if (direction != null && direction.isOK()) {
                                 map.clear();
+                                currentPlace = null;
                                 Route route = direction.getRouteList().get(0);
                                 map.addMarker(new MarkerOptions().position(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude())));
                                 map.addMarker(new MarkerOptions().position(to));
@@ -238,7 +318,7 @@ public class ParkingFragment extends Fragment {
             if (locationPermissionGranted) {
                 map.clear();
                 binding.txtSearch.setText("Location");
-                currentLocation = null;
+                currentPlace = null;
                 Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
                 locationResult.addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -247,12 +327,14 @@ public class ParkingFragment extends Fragment {
                             map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                     new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                            map.addMarker(new MarkerOptions().position(new LatLng(lastKnownLocation.getLatitude(),
+                                    lastKnownLocation.getLongitude())));
                         }
                     } else {
                         Timber.d("Current location is null. Using defaults.");
                         Timber.e("Exception: " + task.getException());
                         map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-                        map.getUiSettings().setMyLocationButtonEnabled(false);
+                        map.addMarker(new MarkerOptions().position(defaultLocation));
                     }
                 });
             }
@@ -283,92 +365,6 @@ public class ParkingFragment extends Fragment {
             }
         }
         updateLocationUI();
-    }
-
-    private void showCurrentPlace() {
-        if (map == null) {
-            return;
-        }
-
-        if (locationPermissionGranted) {
-            List<Place.Field> placeFields = Arrays.asList(Place.Field.NAME, Place.Field.ADDRESS,
-                    Place.Field.LAT_LNG);
-
-            FindCurrentPlaceRequest request =
-                    FindCurrentPlaceRequest.newInstance(placeFields);
-
-            @SuppressWarnings("MissingPermission")
-            Task<FindCurrentPlaceResponse> placeResult = placesClient.findCurrentPlace(request);
-            placeResult.addOnCompleteListener(new OnCompleteListener<FindCurrentPlaceResponse>() {
-                @Override
-                public void onComplete(@NonNull Task<FindCurrentPlaceResponse> task) {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        FindCurrentPlaceResponse likelyPlaces = task.getResult();
-
-                        int count = Math.min(likelyPlaces.getPlaceLikelihoods().size(), M_MAX_ENTRIES);
-
-                        int i = 0;
-                        likelyPlaceNames = new String[count];
-                        likelyPlaceAddresses = new String[count];
-                        likelyPlaceAttributions = new List[count];
-                        likelyPlaceLatLngs = new LatLng[count];
-
-                        for (PlaceLikelihood placeLikelihood : likelyPlaces.getPlaceLikelihoods()) {
-                            likelyPlaceNames[i] = placeLikelihood.getPlace().getName();
-                            likelyPlaceAddresses[i] = placeLikelihood.getPlace().getAddress();
-                            likelyPlaceAttributions[i] = placeLikelihood.getPlace().getAttributions();
-                            likelyPlaceLatLngs[i] = placeLikelihood.getPlace().getLatLng();
-
-                            i++;
-                            if (i > (count - 1)) {
-                                break;
-                            }
-                        }
-
-                        openPlacesDialog();
-                    } else {
-                        Timber.e("Exception: " + task.getException());
-                    }
-                }
-            });
-        } else {
-            // The user has not granted permission.
-            Timber.i("The user did not grant location permission.");
-
-            // Add a default marker, because the user hasn't selected a place.
-            map.addMarker(new MarkerOptions()
-                    .title("Default Location")
-                    .position(defaultLocation)
-                    .snippet("No places found, because location permission is disabled."));
-
-            getLocationPermission();
-        }
-    }
-
-    private void openPlacesDialog() {
-        DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                LatLng markerLatLng = likelyPlaceLatLngs[which];
-                String markerSnippet = likelyPlaceAddresses[which];
-                if (likelyPlaceAttributions[which] != null) {
-                    markerSnippet = markerSnippet + "\n" + likelyPlaceAttributions[which];
-                }
-
-                map.addMarker(new MarkerOptions()
-                        .title(likelyPlaceNames[which])
-                        .position(markerLatLng)
-                        .snippet(markerSnippet));
-
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(markerLatLng,
-                        DEFAULT_ZOOM));
-            }
-        };
-
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setTitle("Choose a place")
-                .setItems(likelyPlaceNames, listener)
-                .show();
     }
 
     private void updateLocationUI() {

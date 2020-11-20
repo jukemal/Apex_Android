@@ -1,98 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.parking.ParkingFragment">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <data>
+
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        tools:context=".ui.parking.ParkingFragment">
 
-        <LinearLayout
-            android:id="@+id/linear_layout"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#FFFFFF"
-            android:orientation="vertical"
-            android:padding="5dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_height="match_parent">
 
             <LinearLayout
+                android:id="@+id/linear_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:background="#FFFFFF"
+                android:orientation="vertical"
+                android:padding="5dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Search : " />
+                    android:orientation="horizontal">
 
-                <EditText
-                    android:id="@+id/txt_search"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="4"
-                    android:autofillHints="Location"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:inputType="none"
-                    android:text="Location" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Search : " />
+
+                    <EditText
+                        android:id="@+id/txt_search"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="4"
+                        android:autofillHints="Location"
+                        android:clickable="true"
+                        android:focusable="false"
+                        android:inputType="none"
+                        android:text="Location" />
+                </LinearLayout>
+
             </LinearLayout>
 
-        </LinearLayout>
+            <fragment
+                android:id="@+id/map_parking"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginBottom="68dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/linear_layout" />
 
-        <fragment
-            android:id="@+id/map_parking"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginBottom="68dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/linear_layout" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnCurrentLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="86dp"
+                android:contentDescription="Current Location"
+                android:elevation="8dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_baseline_location_searching_24"
+                app:backgroundTint="#F44336"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:maxImageSize="35dp"
+                app:pressedTranslationZ="16dp"
+                app:tint="#FFFFFF" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btnCurrentLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="86dp"
-            android:layout_marginEnd="16dp"
-            android:src="@drawable/ic_baseline_location_searching_24"
-            android:elevation="8dp"
-            app:pressedTranslationZ="16dp"
-            app:backgroundTint="#F44336"
-            android:scaleType="center"
-            app:maxImageSize="35dp"
-            app:tint="#FFFFFF"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:contentDescription="Current Location" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnLocationSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="10dp"
+                android:contentDescription="Save Location"
+                android:elevation="8dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_baseline_save_24"
+                app:backgroundTint="#4CAF50"
+                app:layout_constraintBottom_toTopOf="@id/btnCurrentLocation"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:maxImageSize="35dp"
+                app:pressedTranslationZ="16dp"
+                app:tint="#FFFFFF" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btnLocationSave"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:layout_marginEnd="16dp"
-            android:src="@drawable/ic_baseline_save_24"
-            android:elevation="8dp"
-            app:pressedTranslationZ="16dp"
-            app:backgroundTint="#4CAF50"
-            android:scaleType="center"
-            app:maxImageSize="35dp"
-            app:tint="#FFFFFF"
-            app:layout_constraintBottom_toTopOf="@id/btnCurrentLocation"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:contentDescription="Save Location" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <include
+            android:id="@+id/bottom_sheet"
+            layout="@layout/bottom_sheet_layout_parking" />
 
-    <include layout="@layout/bottom_sheet_layout_parking" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

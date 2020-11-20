@@ -1,6 +1,5 @@
 package com.example.apex.ui.profile;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -63,24 +62,16 @@ public class ProfileFragment extends Fragment {
                 });
 
         binding.btnLogOut.setOnClickListener(v -> {
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getContext());
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
 
             builder.setMessage("Do you want to Log Off?")
                     .setTitle("Log Off")
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            firebaseAuth.signOut();
-                            Intent intent = new Intent(getActivity(), SplashActivity.class);
-                            startActivity(intent);
-                            getActivity().finish();
-                        }
-                    }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.cancel();
-                }
-            });
+                    .setPositiveButton("Yes", (dialogInterface, i) -> {
+                        firebaseAuth.signOut();
+                        Intent intent = new Intent(getActivity(), SplashActivity.class);
+                        startActivity(intent);
+                        requireActivity().finish();
+                    }).setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel());
 
             builder.show();
         });
