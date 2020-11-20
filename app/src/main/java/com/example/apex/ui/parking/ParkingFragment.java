@@ -3,6 +3,7 @@ package com.example.apex.ui.parking;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,8 +20,15 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.akexorcist.googledirection.DirectionCallback;
+import com.akexorcist.googledirection.GoogleDirection;
+import com.akexorcist.googledirection.config.GoogleDirectionConfiguration;
+import com.akexorcist.googledirection.model.Direction;
+import com.akexorcist.googledirection.model.Route;
+import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.apex.R;
 import com.example.apex.databinding.FragmentParkingBinding;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,10 +36,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
@@ -39,11 +47,17 @@ import com.google.android.libraries.places.api.model.PlaceLikelihood;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.AutocompleteActivity;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import timber.log.Timber;
+
+import static android.app.Activity.RESULT_OK;
 
 public class ParkingFragment extends Fragment {
 
@@ -56,12 +70,13 @@ public class ParkingFragment extends Fragment {
 
     private FusedLocationProviderClient fusedLocationProviderClient;
 
-    private final LatLng defaultLocation = new LatLng(6.8212, 79.8925);
+    private final LatLng defaultLocation = new LatLng(6.9271, 79.8612);
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean locationPermissionGranted;
 
     private Location lastKnownLocation;
+    private LatLng currentLocation;
 
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
@@ -72,8 +87,10 @@ public class ParkingFragment extends Fragment {
     private List[] likelyPlaceAttributions;
     private LatLng[] likelyPlaceLatLngs;
 
+    private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
+
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        binding=FragmentParkingBinding.inflate(inflater,container,false);
+        binding = FragmentParkingBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
@@ -86,13 +103,14 @@ public class ParkingFragment extends Fragment {
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
-        Places.initialize(getContext(), getString(R.string.MAPS_API_KEY));
-        placesClient = Places.createClient(getContext());
+        Places.initialize(requireContext(), getString(R.string.MAPS_API_KEY));
+        placesClient = Places.createClient(requireContext());
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_parking);
 
+        assert mapFragment != null;
         mapFragment.getMapAsync(googleMap -> {
             map = googleMap;
 
@@ -105,7 +123,7 @@ public class ParkingFragment extends Fragment {
                 @Override
                 public View getInfoContents(Marker marker) {
                     View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents,
-                            (FrameLayout) getActivity().findViewById(R.id.map_navigation), false);
+                            (FrameLayout) requireActivity().findViewById(R.id.map_parking), false);
 
                     TextView title = infoWindow.findViewById(R.id.title);
                     title.setText(marker.getTitle());
@@ -126,39 +144,115 @@ public class ParkingFragment extends Fragment {
 
         binding.btnCurrentLocation.setOnClickListener(v -> getDeviceLocation());
 
-        binding.btnLocationSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                map.addPolyline(new PolylineOptions().add(
-                        new LatLng(6.82116915076, 79.8925148827),
-                        new LatLng(6.82116915076, 79.95)
-                ));
+        binding.btnLocationSave.setOnClickListener(v -> {
+//            map.addPolyline(new PolylineOptions().add(
+//                    new LatLng(6.82116915076, 79.8925148827),
+//                    new LatLng(6.82116915076, 79.95)
+//            ));
 
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(6.82116915076,79.92),13));
-            }
+//            map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(6.82116915076,79.92),13));
         });
+
+        binding.txtSearch.setOnClickListener(v -> {
+            List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
+
+            Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
+                    .build(requireContext());
+            startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Place place = Autocomplete.getPlaceFromIntent(data);
+                Timber.e("Place: " + place.getName() + ", " + place.getId() + ", " + place.getLatLng());
+                currentLocation = place.getLatLng();
+                binding.txtSearch.setText(place.getName());
+                moveCameraToLocation(place.getLatLng());
+            } else if (resultCode == AutocompleteActivity.RESULT_ERROR) {
+                Status status = Autocomplete.getStatusFromIntent(data);
+                Timber.e(status.getStatusMessage());
+            }
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void moveCameraToLocation(LatLng location) {
+        map.clear();
+
+        map.addMarker(new MarkerOptions().position(location));
+
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(location,
+                DEFAULT_ZOOM));
+    }
+
+    private void requestDirection(LatLng to) {
+        GoogleDirectionConfiguration.getInstance().setLogEnabled(true);
+
+        if (lastKnownLocation != null) {
+            GoogleDirection.withServerKey(getString(R.string.MAPS_API_KEY))
+                    .from(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()))
+                    .to(to)
+                    .execute(new DirectionCallback() {
+                        @Override
+                        public void onDirectionSuccess(@Nullable Direction direction) {
+                            if (direction != null && direction.isOK()) {
+                                map.clear();
+                                Route route = direction.getRouteList().get(0);
+                                map.addMarker(new MarkerOptions().position(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude())));
+                                map.addMarker(new MarkerOptions().position(to));
+                                ArrayList<LatLng> directionPositionList = route.getLegList().get(0).getDirectionPoint();
+                                map.addPolyline(DirectionConverter.createPolyline(requireContext(), directionPositionList, 5, Color.RED));
+                                setCameraWithCoordinationBounds(route);
+                            } else {
+                                Toast.makeText(requireContext(), "Error Retrieving Route Data", Toast.LENGTH_SHORT).show();
+                                if (direction != null) {
+                                    Timber.e(direction.getStatus());
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onDirectionFailure(@NonNull Throwable t) {
+                            Toast.makeText(requireContext(), "Error Retrieving Route Data", Toast.LENGTH_SHORT).show();
+                            Timber.e(t);
+                        }
+                    });
+        } else {
+            Toast.makeText(requireContext(), "Enable GPS", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setCameraWithCoordinationBounds(Route route) {
+        LatLng southwest = route.getBound().getSouthwestCoordination().getCoordination();
+        LatLng northeast = route.getBound().getNortheastCoordination().getCoordination();
+        LatLngBounds bounds = new LatLngBounds(southwest, northeast);
+        map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
     }
 
     private void getDeviceLocation() {
         try {
             if (locationPermissionGranted) {
+                map.clear();
+                binding.txtSearch.setText("Location");
+                currentLocation = null;
                 Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
-                locationResult.addOnCompleteListener(new OnCompleteListener<Location>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Location> task) {
-                        if (task.isSuccessful()) {
-                            lastKnownLocation = task.getResult();
-                            if (lastKnownLocation != null) {
-                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                        new LatLng(lastKnownLocation.getLatitude(),
-                                                lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                            }
-                        } else {
-                            Timber.d("Current location is null. Using defaults.");
-                            Timber.e("Exception: " + task.getException());
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-                            map.getUiSettings().setMyLocationButtonEnabled(false);
+                locationResult.addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        lastKnownLocation = task.getResult();
+                        if (lastKnownLocation != null) {
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                    new LatLng(lastKnownLocation.getLatitude(),
+                                            lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
                         }
+                    } else {
+                        Timber.d("Current location is null. Using defaults.");
+                        Timber.e("Exception: " + task.getException());
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
+                        map.getUiSettings().setMyLocationButtonEnabled(false);
                     }
                 });
             }
@@ -171,7 +265,7 @@ public class ParkingFragment extends Fragment {
         if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true;
         } else {
-            ActivityCompat.requestPermissions(getActivity(),
+            ActivityCompat.requestPermissions(requireActivity(),
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
@@ -182,13 +276,10 @@ public class ParkingFragment extends Fragment {
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         locationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    locationPermissionGranted = true;
-                }
+        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationPermissionGranted = true;
             }
         }
         updateLocationUI();
@@ -214,12 +305,7 @@ public class ParkingFragment extends Fragment {
                     if (task.isSuccessful() && task.getResult() != null) {
                         FindCurrentPlaceResponse likelyPlaces = task.getResult();
 
-                        int count;
-                        if (likelyPlaces.getPlaceLikelihoods().size() < M_MAX_ENTRIES) {
-                            count = likelyPlaces.getPlaceLikelihoods().size();
-                        } else {
-                            count = M_MAX_ENTRIES;
-                        }
+                        int count = Math.min(likelyPlaces.getPlaceLikelihoods().size(), M_MAX_ENTRIES);
 
                         int i = 0;
                         likelyPlaceNames = new String[count];
@@ -290,23 +376,13 @@ public class ParkingFragment extends Fragment {
             return;
         }
         try {
-            if (locationPermissionGranted) {
-                map.setMyLocationEnabled(true);
-                map.getUiSettings().setMyLocationButtonEnabled(true);
-            } else {
-                map.setMyLocationEnabled(false);
-                map.getUiSettings().setMyLocationButtonEnabled(false);
+            if (!locationPermissionGranted) {
                 lastKnownLocation = null;
                 getLocationPermission();
             }
         } catch (SecurityException e) {
             Timber.e("Exception: " + e.getMessage());
         }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
