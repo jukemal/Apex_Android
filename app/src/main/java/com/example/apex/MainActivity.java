@@ -8,6 +8,8 @@ import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.example.apex.api.maps_api.MapApiServiceGenerator;
+import com.example.apex.api.weather_api.WeatherApiServiceGenerator;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import timber.log.Timber;
@@ -26,6 +28,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
+
+        WeatherApiServiceGenerator.setupRetrofit(getString(R.string.WEATHER_API_KEY));
+
+        MapApiServiceGenerator.setupRetrofit(getString(R.string.MAPS_API_KEY));
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
 

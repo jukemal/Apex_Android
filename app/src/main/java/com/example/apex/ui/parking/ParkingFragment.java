@@ -27,7 +27,7 @@ import com.akexorcist.googledirection.model.Route;
 import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.apex.R;
 import com.example.apex.databinding.FragmentParkingBinding;
-import com.example.apex.mics.LocationInterface;
+import com.example.apex.utils.LocationInterface;
 import com.example.apex.viewadapters.LocationRecyclerViewAdapter;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -132,6 +132,8 @@ public class ParkingFragment extends Fragment {
         assert mapFragment != null;
         mapFragment.getMapAsync(googleMap -> {
             map = googleMap;
+            map.getUiSettings().setZoomControlsEnabled(true);
+            map.getUiSettings().setZoomGesturesEnabled(true);
 
             map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override

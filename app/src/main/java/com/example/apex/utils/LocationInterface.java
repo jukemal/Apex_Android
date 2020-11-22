@@ -1,4 +1,4 @@
-package com.example.apex.mics;
+package com.example.apex.utils;
 
 import com.google.android.gms.maps.model.LatLng;
 

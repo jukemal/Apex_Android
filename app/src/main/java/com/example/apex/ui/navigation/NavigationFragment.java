@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.akexorcist.googledirection.DirectionCallback;
 import com.akexorcist.googledirection.GoogleDirection;
@@ -25,7 +26,15 @@ import com.akexorcist.googledirection.model.Direction;
 import com.akexorcist.googledirection.model.Route;
 import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.apex.R;
+import com.example.apex.api.maps_api.MapApiService;
+import com.example.apex.api.maps_api.MapApiServiceGenerator;
+import com.example.apex.api.weather_api.WeatherApiService;
+import com.example.apex.api.weather_api.WeatherApiServiceGenerator;
 import com.example.apex.databinding.FragmentNavigationBinding;
+import com.example.apex.models.GeoCode;
+import com.example.apex.models.Weather;
+import com.example.apex.models.WeatherWrapper;
+import com.example.apex.viewadapters.WeatherRecyclerViewAdapter;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -43,11 +52,21 @@ import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.AutocompleteActivity;
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableSource;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.observers.DisposableSingleObserver;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import timber.log.Timber;
 
 import static android.app.Activity.RESULT_OK;
@@ -61,7 +80,7 @@ public class NavigationFragment extends Fragment {
 
     private FusedLocationProviderClient fusedLocationProviderClient;
 
-    private final LatLng defaultLocation = new LatLng(6.8212, 79.8925);
+    private final LatLng defaultLocation = new LatLng(6.9271, 79.8612);
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean locationPermissionGranted;
@@ -73,8 +92,13 @@ public class NavigationFragment extends Fragment {
 
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
+    private CompositeDisposable compositeDisposable;
+
+    private WeatherRecyclerViewAdapter weatherRecyclerViewAdapter;
+
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentNavigationBinding.inflate(inflater, container, false);
+        compositeDisposable = new CompositeDisposable();
         return binding.getRoot();
     }
 
@@ -96,6 +120,8 @@ public class NavigationFragment extends Fragment {
         assert mapFragment != null;
         mapFragment.getMapAsync(googleMap -> {
             map = googleMap;
+            map.getUiSettings().setZoomControlsEnabled(true);
+            map.getUiSettings().setZoomGesturesEnabled(true);
 
             map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
@@ -125,14 +151,37 @@ public class NavigationFragment extends Fragment {
             getDeviceLocation();
         });
 
+        binding.bottomSheet.recyclerviewWeather.setHasFixedSize(true);
+        binding.bottomSheet.recyclerviewWeather.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false));
+        weatherRecyclerViewAdapter = new WeatherRecyclerViewAdapter(requireContext());
+        binding.bottomSheet.recyclerviewWeather.setAdapter(weatherRecyclerViewAdapter);
+
         binding.btnCurrentLocation.setOnClickListener(v -> getDeviceLocation());
 
         binding.txtTo.setOnClickListener(v -> {
             List<Place.Field> fields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
 
             Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
+                    .setCountry("LK")
                     .build(requireContext());
             startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
+        });
+
+        BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.getRoot());
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                    weatherRecyclerViewAdapter.collapseCards();
+                }
+
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
         });
     }
 
@@ -171,6 +220,7 @@ public class NavigationFragment extends Fragment {
                                 ArrayList<LatLng> directionPositionList = route.getLegList().get(0).getDirectionPoint();
                                 map.addPolyline(DirectionConverter.createPolyline(requireContext(), directionPositionList, 5, Color.RED));
                                 setCameraWithCoordinationBounds(route);
+                                getWeatherData(directionPositionList);
                             } else {
                                 Toast.makeText(requireContext(), "Error Retrieving Route Data", Toast.LENGTH_SHORT).show();
                                 if (direction != null) {
@@ -190,6 +240,66 @@ public class NavigationFragment extends Fragment {
         }
     }
 
+    private List<LatLng> selectLocations(ArrayList<LatLng> latLngArrayList) {
+
+        if (latLngArrayList.size() <= 8) {
+            return latLngArrayList;
+        } else {
+            List<LatLng> l = new ArrayList<>();
+
+            l.add(latLngArrayList.get(0));
+            l.add(latLngArrayList.get(latLngArrayList.size() - 1));
+
+            int size = (latLngArrayList.size() - 2) / 3;
+
+            List<List<LatLng>> subSets = Lists.partition(latLngArrayList, size);
+
+            for (int i = 0; i < 3; i++) {
+                l.add(subSets.get(i).get(subSets.get(i).size() / 2));
+            }
+
+            return l;
+        }
+    }
+
+    private void getWeatherData(ArrayList<LatLng> latLngArrayList) {
+
+        List<LatLng> list = selectLocations(latLngArrayList);
+
+        Observable<LatLng> observable = Observable.fromIterable(list);
+
+        Disposable disposable = observable
+                .concatMap((Function<LatLng, ObservableSource<WeatherWrapper>>) this::getWrapper).toList()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeWith(new DisposableSingleObserver<List<WeatherWrapper>>() {
+                    @Override
+                    public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull List<WeatherWrapper> weatherWrapperList) {
+                        weatherRecyclerViewAdapter.setWeatherWrapperList(weatherWrapperList);
+                    }
+
+                    @Override
+                    public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
+                        Toast.makeText(requireContext(), "Error Getting Weather Data", Toast.LENGTH_SHORT).show();
+                        Timber.e(e);
+                    }
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    private Observable<WeatherWrapper> getWrapper(LatLng latLng) {
+        WeatherApiService weatherApiService = WeatherApiServiceGenerator.createService(WeatherApiService.class);
+
+        MapApiService mapApiService = MapApiServiceGenerator.createService(MapApiService.class);
+
+        Observable<Weather> weatherObservable = weatherApiService.getWeather(latLng.latitude, latLng.longitude);
+
+        Observable<GeoCode> geoCodeObservable = mapApiService.getGeocode(latLng.latitude + "," + latLng.longitude);
+
+        return Observable.zip(weatherObservable, geoCodeObservable, (weather, geoCode) -> new WeatherWrapper(latLng, weather, geoCode));
+    }
+
     private void setCameraWithCoordinationBounds(Route route) {
         LatLng southwest = route.getBound().getSouthwestCoordination().getCoordination();
         LatLng northeast = route.getBound().getNortheastCoordination().getCoordination();
@@ -202,6 +312,7 @@ public class NavigationFragment extends Fragment {
             if (locationPermissionGranted) {
                 map.clear();
                 binding.txtTo.setText("To");
+                weatherRecyclerViewAdapter.emptyWeatherWrapperList();
                 Task<Location> locationResult = fusedLocationProviderClient.getLastLocation();
                 locationResult.addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -210,11 +321,14 @@ public class NavigationFragment extends Fragment {
                             map.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                     new LatLng(lastKnownLocation.getLatitude(),
                                             lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                            map.addMarker(new MarkerOptions().position(new LatLng(lastKnownLocation.getLatitude(),
+                                    lastKnownLocation.getLongitude())));
                         }
                     } else {
                         Timber.d("Current location is null. Using defaults.");
                         Timber.e("Exception: " + task.getException());
                         map.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
+                        map.addMarker(new MarkerOptions().position(defaultLocation));
                     }
                 });
             }
@@ -274,5 +388,6 @@ public class NavigationFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         binding = null;
+        compositeDisposable.dispose();
     }
 }

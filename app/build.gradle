@@ -15,8 +15,11 @@ android {
         def secureProps = new Properties()
         if (file("secure.properties").exists()) {
             file("secure.properties")?.withInputStream { secureProps.load(it) }
+        } else {
+            throw new GradleException("Create 'secure.properties' file in app folder.")
         }
         resValue "string", "MAPS_API_KEY", (secureProps.getProperty("MAPS_API_KEY") ?: "")
+        resValue "string", "WEATHER_API_KEY", (secureProps.getProperty("WEATHER_API_KEY") ?: "")
     }
 
     buildTypes {
@@ -47,6 +50,8 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.3.1'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
 
+    implementation 'androidx.preference:preference:1.1.1'
+
     implementation 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
 
@@ -66,10 +71,7 @@ dependencies {
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
-    implementation 'com.github.harry1453:android-bluetooth-serial:v1.1'
-
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'com.github.harry1453:android-bluetooth-serial:1.1.2'
 
     implementation platform('com.google.firebase:firebase-bom:25.12.0')
     implementation "com.google.firebase:firebase-auth"
@@ -80,4 +82,19 @@ dependencies {
     implementation 'com.github.koushikcse:LoadingButton:1.7'
 
     implementation 'com.akexorcist:google-direction-library:1.2.1'
+
+    implementation 'io.reactivex.rxjava3:rxjava:3.0.7'
+    implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
+
+    implementation 'com.google.code.gson:gson:2.8.6'
+
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+    implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
+
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+
+    implementation 'com.google.guava:guava:30.0-android'
 }

@@ -9,8 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.apex.databinding.LayoutParkingRecyclerviewItemBinding;
-import com.example.apex.mics.LocationInterface;
 import com.example.apex.models.Location;
+import com.example.apex.utils.LocationInterface;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
