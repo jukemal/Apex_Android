@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.databinding.ObservableArrayList;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -70,6 +72,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import timber.log.Timber;
 
 import static android.app.Activity.RESULT_OK;
+import static android.content.Context.INPUT_METHOD_SERVICE;
 
 public class NavigationFragment extends Fragment {
 
@@ -110,6 +113,11 @@ public class NavigationFragment extends Fragment {
             lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
+
+        hideKeyboard();
+
+        ObservableArrayList<Weather> weatherObservableArrayList = new ObservableArrayList<>();
+
 
         Places.initialize(requireContext(), getString(R.string.MAPS_API_KEY));
 
@@ -187,6 +195,7 @@ public class NavigationFragment extends Fragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        hideKeyboard();
         if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Place place = Autocomplete.getPlaceFromIntent(data);
@@ -384,10 +393,17 @@ public class NavigationFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    private void hideKeyboard() {
+        final InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(binding.getRoot().getApplicationWindowToken(), 0);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         binding = null;
-        compositeDisposable.dispose();
+        if (compositeDisposable != null) {
+            compositeDisposable.dispose();
+        }
     }
 }

@@ -31,9 +31,8 @@
             android:id="@+id/linear_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFFFFF"
             android:orientation="vertical"
-            android:padding="5dp"
+            android:padding="10dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -52,18 +51,20 @@
                 <EditText
                     android:id="@+id/txt_from"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="35dp"
                     android:layout_weight="4"
                     android:autofillHints="To"
                     android:enabled="false"
                     android:inputType="text"
-                    android:text="Current Location" />
+                    android:text="Current Location"
+                    android:background="@drawable/edit_text_shape_plane" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -74,13 +75,14 @@
                 <EditText
                     android:id="@+id/txt_to"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="35dp"
                     android:layout_weight="4"
                     android:autofillHints="To"
                     android:clickable="true"
                     android:focusable="false"
                     android:inputType="none"
-                    android:text="To" />
+                    android:text="To"
+                    android:background="@drawable/edit_text_shape_plane" />
             </LinearLayout>
 
         </LinearLayout>
@@ -90,7 +92,7 @@
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginBottom="68dp"
+            android:layout_marginBottom="38dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

@@ -1,6 +1,7 @@
 package com.example.apex;
 
 import android.os.Bundle;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,13 +22,17 @@ public class RegisterActivity extends AppCompatActivity {
 
     private final CollectionReference collectionReferenceUser = db.collection("users");
 
+    private ActivityRegisterBinding binding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ActivityRegisterBinding binding = ActivityRegisterBinding.inflate(getLayoutInflater());
+        binding = ActivityRegisterBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
+
+        hideKeyboard();
 
         binding.buttonRegister.setOnClickListener(v -> {
             binding.buttonRegister.showLoading();
@@ -107,5 +112,14 @@ public class RegisterActivity extends AppCompatActivity {
                         });
             }
         });
+
+        binding.nestedScroller.setOnClickListener(v -> hideKeyboard());
+
+        binding.linearLayout.setOnClickListener(v -> hideKeyboard());
+    }
+
+    private void hideKeyboard() {
+        final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(binding.getRoot().getApplicationWindowToken(), 0);
     }
 }

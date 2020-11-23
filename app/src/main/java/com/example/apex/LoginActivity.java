@@ -2,6 +2,8 @@ package com.example.apex;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,13 +15,17 @@ public class LoginActivity extends AppCompatActivity {
 
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
 
+    private ActivityLoginBinding binding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ActivityLoginBinding binding = ActivityLoginBinding.inflate(getLayoutInflater());
+        binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         getWindow().setNavigationBarColor(getResources().getColor(R.color.colorPrimary));
+
+        hideKeyboard();
 
         binding.buttonLogin.setOnClickListener(v -> {
             binding.buttonLogin.showLoading();
@@ -61,5 +67,21 @@ public class LoginActivity extends AppCompatActivity {
         binding.btnRegister.setOnClickListener(v -> {
             startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
         });
+
+        binding.nestedScroller.setOnClickListener(v -> {
+            hideKeyboard();
+        });
+
+        binding.linearLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideKeyboard();
+            }
+        });
+    }
+
+    private void hideKeyboard() {
+        final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(binding.getRoot().getApplicationWindowToken(), 0);
     }
 }

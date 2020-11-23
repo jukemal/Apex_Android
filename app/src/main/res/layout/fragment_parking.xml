@@ -20,35 +20,29 @@
                 android:id="@+id/linear_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#FFFFFF"
-                android:orientation="vertical"
-                android:padding="5dp"
+                android:orientation="horizontal"
+                android:padding="10dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_weight="1"
+                    android:text="Search : " />
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Search : " />
-
-                    <EditText
-                        android:id="@+id/txt_search"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="4"
-                        android:autofillHints="Location"
-                        android:clickable="true"
-                        android:focusable="false"
-                        android:inputType="none"
-                        android:text="Location" />
-                </LinearLayout>
+                <EditText
+                    android:id="@+id/txt_search"
+                    android:layout_width="0dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="4"
+                    android:autofillHints="Location"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:text="Location"
+                    android:background="@drawable/edit_text_shape_plane" />
 
             </LinearLayout>
 
@@ -57,7 +51,7 @@
                 android:name="com.google.android.gms.maps.SupportMapFragment"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginBottom="68dp"
+                android:layout_marginBottom="38dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
