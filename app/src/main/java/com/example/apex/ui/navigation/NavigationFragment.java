@@ -17,7 +17,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.databinding.ObservableArrayList;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -115,9 +114,6 @@ public class NavigationFragment extends Fragment {
         }
 
         hideKeyboard();
-
-        ObservableArrayList<Weather> weatherObservableArrayList = new ObservableArrayList<>();
-
 
         Places.initialize(requireContext(), getString(R.string.MAPS_API_KEY));
 

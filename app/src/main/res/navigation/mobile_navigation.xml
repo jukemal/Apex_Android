@@ -28,4 +28,10 @@
         android:name="com.example.apex.ui.profile.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_bluetooth"
+        android:name="com.example.apex.ui.bluetooth.BluetoothFragment"
+        android:label="Bluetooth"
+        tools:layout="@layout/fragment_bluetooth" />
 </navigation>
