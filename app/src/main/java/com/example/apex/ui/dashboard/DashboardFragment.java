@@ -87,6 +87,22 @@ public class DashboardFragment extends Fragment {
         viewModel.getTemperatureDate().observe(getViewLifecycleOwner(), data -> addEntry(binding.temperatureChart, data));
         viewModel.getGasData().observe(getViewLifecycleOwner(), data -> addEntry(binding.airQualityChart, data));
         viewModel.getCOData().observe(getViewLifecycleOwner(), data -> addEntry(binding.carbonMonoxideChart, data));
+
+        viewModel.getCOLevel().observe(getViewLifecycleOwner(), isHigh -> {
+            if (isHigh) {
+                binding.headingWarningCoLevel.setVisibility(View.VISIBLE);
+            } else {
+                binding.headingWarningCoLevel.setVisibility(View.GONE);
+            }
+        });
+
+        viewModel.getAirLevel().observe(getViewLifecycleOwner(), isHigh -> {
+            if (isHigh) {
+                binding.headingWarningGasLevel.setVisibility(View.VISIBLE);
+            } else {
+                binding.headingWarningGasLevel.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void onConnectionStatus(DashboardViewModel.ConnectionStatus status) {

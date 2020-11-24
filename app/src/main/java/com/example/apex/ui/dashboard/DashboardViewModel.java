@@ -9,6 +9,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.apex.R;
@@ -26,6 +27,10 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 public class DashboardViewModel extends AndroidViewModel {
+
+    private final float CO_LEVEL_THRESHOLD = 400;
+    private final float AIR_LEVEL_THRESHOLD = 350;
+
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private BluetoothManager bluetoothManager;
@@ -44,6 +49,9 @@ public class DashboardViewModel extends AndroidViewModel {
     private final MutableLiveData<Float> COData = new MutableLiveData<>();
     private final MutableLiveData<Float> gasData = new MutableLiveData<>();
 
+    private final MediatorLiveData<Boolean> COLevel = new MediatorLiveData<>();
+    private final MediatorLiveData<Boolean> AirLevel = new MediatorLiveData<>();
+
     private StringBuilder messages = new StringBuilder();
 
     private String deviceName;
@@ -53,6 +61,14 @@ public class DashboardViewModel extends AndroidViewModel {
 
     public DashboardViewModel(@NonNull Application application) {
         super(application);
+
+        COLevel.addSource(COData, value -> {
+            COLevel.postValue(value >= CO_LEVEL_THRESHOLD);
+        });
+
+        AirLevel.addSource(gasData, value -> {
+            AirLevel.postValue(value >= AIR_LEVEL_THRESHOLD);
+        });
     }
 
     public boolean setupViewModel() {
@@ -238,24 +254,32 @@ public class DashboardViewModel extends AndroidViewModel {
         return messageData;
     }
 
-    public MutableLiveData<Float> getHumidityData() {
+    public LiveData<Float> getHumidityData() {
         return humidityData;
     }
 
-    public MutableLiveData<Float> getTemperatureDate() {
+    public LiveData<Float> getTemperatureDate() {
         return temperatureDate;
     }
 
-    public MutableLiveData<Float> getHeatIndexData() {
+    public LiveData<Float> getHeatIndexData() {
         return heatIndexData;
     }
 
-    public MutableLiveData<Float> getCOData() {
+    public LiveData<Float> getCOData() {
         return COData;
     }
 
-    public MutableLiveData<Float> getGasData() {
+    public LiveData<Float> getGasData() {
         return gasData;
+    }
+
+    public LiveData<Boolean> getCOLevel() {
+        return COLevel;
+    }
+
+    public LiveData<Boolean> getAirLevel() {
+        return AirLevel;
     }
 
     public enum ConnectionStatus {
