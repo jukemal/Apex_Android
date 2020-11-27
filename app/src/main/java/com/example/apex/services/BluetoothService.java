@@ -89,42 +89,15 @@ public class BluetoothService {
         intent.putExtra(DashboardFragment.Dashboard_Data, message);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 
-        for (String s : message.split(";")) {
-            String[] temp = s.split(":");
+        String[] temp = message.split(":");
 
-            switch (temp[0]) {
-                case "H":
-//                    try {
-//                        humidityData.setValue(Float.parseFloat(temp[1]));
-//                        sendBroadcast(DashboardFragment.Humidity_Data,temp[1]);
-//                    } catch (Exception e) {
-//                        humidityData.setValue(0f);
-//                    }
-                    break;
-                case "T":
-//                    try {
-//                        temperatureDate.setValue(Float.parseFloat(temp[1]));
-//                    } catch (Exception e) {
-//                        temperatureDate.setValue(0f);
-//                    }
-                    break;
-                case "C":
-//                    try {
-//                        COData.setValue(Float.parseFloat(temp[1]));
-//                    } catch (Exception e) {
-//                        COData.setValue(0f);
-//                    }
-                    break;
-                case "G":
-//                    try {
-//                        gasData.setValue(Float.parseFloat(temp[1]));
-//                    } catch (Exception e) {
-//                        gasData.setValue(0f);
-//                    }
-                    break;
-            }
+        switch (temp[0]) {
+            case "H":
+
+                break;
         }
     }
+
 
     private void toast(String message) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show();

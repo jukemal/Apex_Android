@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.apex.R;
 import com.example.apex.databinding.LayoutBluetoothRecyclerviewItemBinding;
-import com.example.apex.services.LocationUpdatesService;
+import com.example.apex.services.AppService;
 
 import java.util.List;
 
@@ -70,7 +70,7 @@ public class BluetoothRecyclerViewAdapter extends RecyclerView.Adapter<Bluetooth
 
                 LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
-                Intent intent = new Intent(LocationUpdatesService.MSERVICEBROADCASTRECEIVERACTION);
+                Intent intent = new Intent(AppService.MSERVICEBROADCASTRECEIVERACTION);
                 intent.putExtra("mac", bluetoothDevice.getAddress());
                 localBroadcastManager.sendBroadcast(intent);
             });

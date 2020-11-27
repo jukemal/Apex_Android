@@ -65,7 +65,7 @@
             android:windowSoftInputMode="adjustNothing" />
 
         <service
-            android:name=".services.LocationUpdatesService"
+            android:name=".services.AppService"
             android:enabled="true"
             android:exported="true"
             android:foregroundServiceType="location" />

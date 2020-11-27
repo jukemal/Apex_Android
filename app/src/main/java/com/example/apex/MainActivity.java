@@ -1,14 +1,11 @@
 package com.example.apex;
 
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,12 +13,10 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -30,8 +25,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.apex.api.maps_api.MapApiServiceGenerator;
 import com.example.apex.api.weather_api.WeatherApiServiceGenerator;
 import com.example.apex.databinding.ActivityMainBinding;
-import com.example.apex.services.LocationUpdatesService;
-import com.example.apex.utils.Utils;
+import com.example.apex.services.AppService;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import timber.log.Timber;
@@ -40,20 +34,20 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
-    private MyReceiver myReceiver;
-
-    private LocationUpdatesService mService = null;
+    private AppService mService = null;
 
     private boolean mBound = false;
 
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
-
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
+            AppService.LocalBinder binder = (AppService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
-            requestLocationUpdate();
+
+            if (!checkPermissions()) {
+                requestPermissions();
+            }
         }
 
         @Override
@@ -90,44 +84,23 @@ public class MainActivity extends AppCompatActivity {
 
         locationEnabled();
         bluetoothEnabled();
-
-        myReceiver = new MyReceiver();
-    }
-
-    private void requestLocationUpdate() {
-        if (!checkPermissions()) {
-            requestPermissions();
-        } else {
-            mService.requestLocationUpdates();
-        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-//        if (mService != null) {
-//            if (checkPermissions()) {
-//                mService.requestLocationUpdates();
-//            } else {
-//                requestPermissions();
-//            }
-//        }
-
-        bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
+        bindService(new Intent(this, AppService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
-                new IntentFilter(LocationUpdatesService.ACTION_BROADCAST));
     }
 
     @Override
     protected void onPause() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
     }
 
@@ -238,17 +211,6 @@ public class MainActivity extends AppCompatActivity {
                     }).setNegativeButton("OK", (dialogInterface, i) -> dialogInterface.cancel());
 
             builder.show();
-        }
-    }
-
-    private class MyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
-            if (location != null) {
-                Toast.makeText(MainActivity.this, Utils.getLocationText(location),
-                        Toast.LENGTH_SHORT).show();
-            }
         }
     }
 
