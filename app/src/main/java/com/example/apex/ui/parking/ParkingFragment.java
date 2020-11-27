@@ -1,3 +1,5 @@
+// Ravindu
+
 package com.example.apex.ui.parking;
 
 import android.content.Intent;
@@ -89,12 +91,6 @@ public class ParkingFragment extends Fragment {
 
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
-
-    private static final int M_MAX_ENTRIES = 5;
-    private String[] likelyPlaceNames;
-    private String[] likelyPlaceAddresses;
-    private List[] likelyPlaceAttributions;
-    private LatLng[] likelyPlaceLatLngs;
 
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
 
@@ -225,6 +221,27 @@ public class ParkingFragment extends Fragment {
                     .setCountry("LK")
                     .build(requireContext());
             startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE);
+        });
+
+        BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.getRoot());
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                switch (newState) {
+                    case BottomSheetBehavior.STATE_COLLAPSED:
+                        binding.bottomSheet.arrow.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_keyboard_arrow_up_24));
+                        break;
+                    case BottomSheetBehavior.STATE_EXPANDED:
+                        binding.bottomSheet.arrow.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_keyboard_arrow_down_24));
+                        break;
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
         });
     }
 

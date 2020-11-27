@@ -131,15 +131,6 @@
                     app:cornerRadius="15dp" />
 
                 <Button
-                    android:id="@+id/btnSettings"
-                    android:layout_width="170dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="8dp"
-                    android:text="Settings"
-                    app:cornerRadius="15dp" />
-
-                <Button
                     android:id="@+id/btnLogOut"
                     android:layout_width="170dp"
                     android:layout_height="wrap_content"

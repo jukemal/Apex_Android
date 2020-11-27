@@ -1,8 +1,11 @@
+// Dakshina
+
 package com.example.apex.viewadapters;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -66,6 +69,13 @@ public class BluetoothRecyclerViewAdapter extends RecyclerView.Adapter<Bluetooth
             binding.txtDeviceMac.setText(bluetoothDevice.getAddress());
 
             itemView.setOnClickListener(v -> {
+                SharedPreferences sharedPreferences = context.getSharedPreferences(context.getResources().getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+
+                editor.putString("DEVICE_MAC", bluetoothDevice.getAddress());
+
+                editor.apply();
+
                 navController.navigate(R.id.navigation_dashboard);
 
                 LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);

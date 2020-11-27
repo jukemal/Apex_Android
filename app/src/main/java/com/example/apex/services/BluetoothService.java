@@ -1,3 +1,5 @@
+// Dakshina
+
 package com.example.apex.services;
 
 import android.content.Context;
@@ -92,8 +94,10 @@ public class BluetoothService {
         String[] temp = message.split(":");
 
         switch (temp[0]) {
-            case "H":
-
+            case "A":
+                LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
+                Intent i = new Intent(LocationService.ACCIDENT_BROADCAST);
+                localBroadcastManager.sendBroadcast(i);
                 break;
         }
     }

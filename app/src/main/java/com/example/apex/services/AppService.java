@@ -25,6 +25,8 @@ import com.example.apex.MainActivity;
 import com.example.apex.R;
 import com.example.apex.utils.LocationServiceInterface;
 
+import java.util.Random;
+
 import timber.log.Timber;
 
 public class AppService extends Service {
@@ -33,7 +35,7 @@ public class AppService extends Service {
 
     private static final String TAG = AppService.class.getSimpleName();
 
-    private static final String CHANNEL_ID = "channel_01";
+    public static final String CHANNEL_ID = "channel_01";
 
     private static final String EXTRA_STARTED_FROM_NOTIFICATION = PACKAGE_NAME +
             ".started_from_notification";
@@ -41,6 +43,7 @@ public class AppService extends Service {
     private final IBinder mBinder = new LocalBinder();
 
     private static final int NOTIFICATION_ID = 12345678;
+    private static final int ACCIDENT_NOTIFICATION_ID = 22222222;
 
     private boolean mChangingConfiguration = false;
 
@@ -60,15 +63,23 @@ public class AppService extends Service {
 
         locationService = new LocationService(getApplicationContext(), new LocationServiceInterface() {
             @Override
-            public void updateNotification() {
-                if (serviceIsRunningInForeground(getApplicationContext())) {
-                    mNotificationManager.notify(NOTIFICATION_ID, getNotification());
-                }
+            public void stopService() {
+                stopSelf();
             }
 
             @Override
-            public void stopService() {
-                stopSelf();
+            public void showAccidentNotification() {
+                Random random = new Random();
+
+                Notification builder = new NotificationCompat.Builder(getApplicationContext(), AppService.CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle("Apex")
+                        .setContentText("This is a high accident area. Drive Safely")
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setAutoCancel(true)
+                        .build();
+
+                startForeground(ACCIDENT_NOTIFICATION_ID + random.nextInt(50), builder);
             }
         });
 
@@ -141,6 +152,7 @@ public class AppService extends Service {
     public void onDestroy() {
         mServiceHandler.removeCallbacksAndMessages(null);
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(broadcastReceiver);
+        locationService.destroy();
     }
 
     public class LocalBinder extends Binder {

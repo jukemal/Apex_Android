@@ -1,3 +1,5 @@
+// Dakshina
+
 package com.example.apex.ui.dashboard;
 
 import android.content.BroadcastReceiver;
@@ -25,8 +27,6 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
-
-import timber.log.Timber;
 
 import static android.graphics.Color.RED;
 import static android.graphics.Color.WHITE;
@@ -225,8 +225,6 @@ public class DashboardFragment extends Fragment {
     private class BluetoothReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Timber.e("me: " + intent.getStringExtra(Dashboard_Data));
-
             init(intent.getStringExtra(Dashboard_Data));
         }
     }

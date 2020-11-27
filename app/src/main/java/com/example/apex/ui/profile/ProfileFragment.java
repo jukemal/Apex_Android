@@ -1,7 +1,10 @@
+// Dakshina
+
 package com.example.apex.ui.profile;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -86,13 +89,24 @@ public class ProfileFragment extends Fragment {
         });
 
         binding.btnSOS.setOnClickListener(v -> {
-//            startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:1234567890")));
+            documentReferenceUser.get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot documentSnapshot = task.getResult();
 
-//            LocalBroadcastManager localBroadcastManager=LocalBroadcastManager.getInstance(requireContext());
-//
-//            Intent intent=new Intent(LocationUpdatesService.MSERVICEBROADCASTRECEIVERACTION);
-//            intent.putExtra("data","fjfj");
-//            localBroadcastManager.sendBroadcast(intent);
+                            if (documentSnapshot.exists()) {
+                                User user = documentSnapshot.toObject(User.class);
+
+                                startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + user.getTelephoneNumber())));
+                            } else {
+                                Timber.e("No such document.");
+                            }
+                        } else {
+                            Timber.e(task.getException(), "Task failed");
+
+                            Toast.makeText(getContext(), "No Internet Connection. Try Again", Toast.LENGTH_SHORT).show();
+                        }
+                    });
         });
     }
 

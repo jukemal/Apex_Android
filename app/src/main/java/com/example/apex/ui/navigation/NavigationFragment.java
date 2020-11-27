@@ -1,3 +1,5 @@
+// Ravindu
+
 package com.example.apex.ui.navigation;
 
 import android.content.Intent;
@@ -176,10 +178,15 @@ public class NavigationFragment extends Fragment {
         bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                    weatherRecyclerViewAdapter.collapseCards();
+                switch (newState) {
+                    case BottomSheetBehavior.STATE_COLLAPSED:
+                        weatherRecyclerViewAdapter.collapseCards();
+                        binding.bottomSheet.arrow.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_keyboard_arrow_up_24));
+                        break;
+                    case BottomSheetBehavior.STATE_EXPANDED:
+                        binding.bottomSheet.arrow.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_keyboard_arrow_down_24));
+                        break;
                 }
-
             }
 
             @Override
