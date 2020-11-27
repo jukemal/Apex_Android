@@ -1,20 +1,21 @@
 package com.example.apex.ui.dashboard;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.example.apex.R;
 import com.example.apex.databinding.FragmentDashboardBinding;
+import com.example.apex.services.BluetoothService;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -33,9 +34,16 @@ import static android.graphics.Color.rgb;
 
 public class DashboardFragment extends Fragment {
 
+    public final static String Dashboard_Data="Dashboard_Data";
+
+    private final static float CO_LEVEL_THRESHOLD = 400;
+    private final static float AIR_LEVEL_THRESHOLD = 350;
+
     private DashboardViewModel viewModel;
 
     private FragmentDashboardBinding binding;
+
+    private MyReceiver myReceiver;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentDashboardBinding.inflate(LayoutInflater.from(requireContext()), container, false);
@@ -46,94 +54,168 @@ public class DashboardFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        viewModel = new ViewModelProvider(this).get(DashboardViewModel.class);
+        myReceiver = new MyReceiver();
 
-        if (getArguments() != null) {
-            final String device_name = getArguments().getString("DEVICE_NAME");
-            final String device_mac = getArguments().getString("DEVICE_MAC");
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(myReceiver,
+                new IntentFilter(BluetoothService.BLUETOOTHBROADCAST));
 
-            Timber.e("Details : " + device_mac + " , " + device_name);
+        initChart(binding.humidityChart);
+        initChart(binding.temperatureChart);
+        initChart(binding.carbonMonoxideChart);
+        initChart(binding.airQualityChart);
 
-            SharedPreferences sharedPreferences = requireActivity().getSharedPreferences(getResources().getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
+//        viewModel = new ViewModelProvider(this).get(DashboardViewModel.class);
 
-            editor.putString("DEVICE_NAME", device_name);
-            editor.putString("DEVICE_MAC", device_mac);
-
-            editor.apply();
-
-            if (viewModel.setupViewModel(device_name, device_mac)) {
-                setupCharts();
-                viewModel.connect();
-            } else {
-                binding.connectButton.setEnabled(false);
-                Toast.makeText(requireContext(), "Error setting up Bluetooth dash", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            if (viewModel.setupViewModel()) {
-                setupCharts();
-                viewModel.connect();
-            } else {
-                binding.connectButton.setEnabled(false);
-                Toast.makeText(requireContext(), "Error setting up Bluetooth new", Toast.LENGTH_SHORT).show();
-            }
-        }
+//        if (getArguments() != null) {
+//            final String device_name = getArguments().getString("DEVICE_NAME");
+//            final String device_mac = getArguments().getString("DEVICE_MAC");
+//
+//            Timber.e("Details : " + device_mac + " , " + device_name);
+//
+//            SharedPreferences sharedPreferences = requireActivity().getSharedPreferences(getResources().getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+//            SharedPreferences.Editor editor = sharedPreferences.edit();
+//
+//            editor.putString("DEVICE_NAME", device_name);
+//            editor.putString("DEVICE_MAC", device_mac);
+//
+//            editor.apply();
+//
+//            if (viewModel.setupViewModel(device_name, device_mac)) {
+//                setupCharts();
+//                viewModel.connect();
+//            } else {
+//                binding.connectButton.setEnabled(false);
+//                Toast.makeText(requireContext(), "Error setting up Bluetooth dash", Toast.LENGTH_SHORT).show();
+//            }
+//        } else {
+//            if (viewModel.setupViewModel()) {
+//                setupCharts();
+//                viewModel.connect();
+//            } else {
+//                binding.connectButton.setEnabled(false);
+//                Toast.makeText(requireContext(), "Error setting up Bluetooth new", Toast.LENGTH_SHORT).show();
+//            }
+//        }
     }
 
-    private void setupCharts() {
-        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), this::onConnectionStatus);
-
-        viewModel.getHumidityData().observe(getViewLifecycleOwner(), data -> addEntry(binding.humidityChart, data));
-        viewModel.getTemperatureDate().observe(getViewLifecycleOwner(), data -> addEntry(binding.temperatureChart, data));
-        viewModel.getGasData().observe(getViewLifecycleOwner(), data -> addEntry(binding.airQualityChart, data));
-        viewModel.getCOData().observe(getViewLifecycleOwner(), data -> addEntry(binding.carbonMonoxideChart, data));
-
-        viewModel.getCOLevel().observe(getViewLifecycleOwner(), isHigh -> {
-            if (isHigh) {
-                binding.headingWarningCoLevel.setVisibility(View.VISIBLE);
-            } else {
-                binding.headingWarningCoLevel.setVisibility(View.GONE);
-            }
-        });
-
-        viewModel.getAirLevel().observe(getViewLifecycleOwner(), isHigh -> {
-            if (isHigh) {
-                binding.headingWarningGasLevel.setVisibility(View.VISIBLE);
-            } else {
-                binding.headingWarningGasLevel.setVisibility(View.GONE);
-            }
-        });
+    @Override
+    public void onResume() {
+        super.onResume();
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(myReceiver,
+                new IntentFilter(BluetoothService.BLUETOOTHBROADCAST));
     }
 
-    private void onConnectionStatus(DashboardViewModel.ConnectionStatus status) {
-        switch (status) {
-            case CONNECTED:
-                binding.connectionText.setText("Status: Connected");
-                binding.connectButton.setEnabled(true);
-                binding.connectButton.setText("Disconnect");
-                binding.connectButton.setOnClickListener(v -> viewModel.disconnect());
-                initChart(binding.humidityChart);
-                initChart(binding.temperatureChart);
-                initChart(binding.carbonMonoxideChart);
-                initChart(binding.airQualityChart);
-                break;
+    @Override
+    public void onPause() {
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(myReceiver);
+        super.onPause();
+    }
 
-            case CONNECTING:
-                binding.connectionText.setText("Status: Connecting");
-                binding.connectButton.setEnabled(false);
-                binding.connectButton.setText("Connect");
-                break;
+//    private void setupCharts() {
+//        viewModel.getConnectionStatus().observe(getViewLifecycleOwner(), this::onConnectionStatus);
+//
+//        viewModel.getHumidityData().observe(getViewLifecycleOwner(), data -> addEntry(binding.humidityChart, data));
+//        viewModel.getTemperatureDate().observe(getViewLifecycleOwner(), data -> addEntry(binding.temperatureChart, data));
+//        viewModel.getGasData().observe(getViewLifecycleOwner(), data -> addEntry(binding.airQualityChart, data));
+//        viewModel.getCOData().observe(getViewLifecycleOwner(), data -> addEntry(binding.carbonMonoxideChart, data));
+//
+//        viewModel.getCOLevel().observe(getViewLifecycleOwner(), isHigh -> {
+//            if (isHigh) {
+//                binding.headingWarningCoLevel.setVisibility(View.VISIBLE);
+//            } else {
+//                binding.headingWarningCoLevel.setVisibility(View.GONE);
+//            }
+//        });
+//
+//        viewModel.getAirLevel().observe(getViewLifecycleOwner(), isHigh -> {
+//            if (isHigh) {
+//                binding.headingWarningGasLevel.setVisibility(View.VISIBLE);
+//            } else {
+//                binding.headingWarningGasLevel.setVisibility(View.GONE);
+//            }
+//        });
+//    }
 
-            case DISCONNECTED:
-                binding.connectionText.setText("Status: Disconnected");
-                binding.connectButton.setEnabled(true);
-                binding.connectButton.setText("Connect");
-                binding.connectButton.setOnClickListener(v -> viewModel.connect());
-                clearChart(binding.humidityChart);
-                clearChart(binding.temperatureChart);
-                clearChart(binding.carbonMonoxideChart);
-                clearChart(binding.airQualityChart);
-                break;
+//    private void onConnectionStatus(DashboardViewModel.ConnectionStatus status) {
+//        switch (status) {
+//            case CONNECTED:
+//                binding.connectionText.setText("Status: Connected");
+//                binding.connectButton.setEnabled(true);
+//                binding.connectButton.setText("Disconnect");
+//                binding.connectButton.setOnClickListener(v -> viewModel.disconnect());
+//                initChart(binding.humidityChart);
+//                initChart(binding.temperatureChart);
+//                initChart(binding.carbonMonoxideChart);
+//                initChart(binding.airQualityChart);
+//                break;
+//
+//            case CONNECTING:
+//                binding.connectionText.setText("Status: Connecting");
+//                binding.connectButton.setEnabled(false);
+//                binding.connectButton.setText("Connect");
+//                break;
+//
+//            case DISCONNECTED:
+//                binding.connectionText.setText("Status: Disconnected");
+//                binding.connectButton.setEnabled(true);
+//                binding.connectButton.setText("Connect");
+//                binding.connectButton.setOnClickListener(v -> viewModel.connect());
+//                clearChart(binding.humidityChart);
+//                clearChart(binding.temperatureChart);
+//                clearChart(binding.carbonMonoxideChart);
+//                clearChart(binding.airQualityChart);
+//                break;
+//        }
+//    }
+
+    private void init(String message) {
+        for (String s : message.split(";")) {
+            String[] temp = s.split(":");
+
+            switch (temp[0]) {
+                case "H":
+                    try {
+                        addEntry(binding.humidityChart, Float.parseFloat(temp[1]));
+                    } catch (Exception e) {
+                        addEntry(binding.humidityChart, 0f);
+                    }
+                    break;
+                case "T":
+                    try {
+                        addEntry(binding.temperatureChart, Float.parseFloat(temp[1]));
+                    } catch (Exception e) {
+                        addEntry(binding.temperatureChart, 0f);
+                    }
+                    break;
+                case "C":
+                    try {
+                        addEntry(binding.carbonMonoxideChart, Float.parseFloat(temp[1]));
+
+                        if(CO_LEVEL_THRESHOLD<Float.parseFloat(temp[1])){
+                            binding.headingWarningCoLevel.setVisibility(View.VISIBLE);
+                        }else {
+                            binding.headingWarningCoLevel.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        addEntry(binding.carbonMonoxideChart, 0f);
+                        binding.headingWarningCoLevel.setVisibility(View.GONE);
+                    }
+                    break;
+                case "G":
+                    try {
+                        addEntry(binding.airQualityChart, Float.parseFloat(temp[1]));
+
+                        if(AIR_LEVEL_THRESHOLD<Float.parseFloat(temp[1])){
+                            binding.headingWarningGasLevel.setVisibility(View.VISIBLE);
+                        }else {
+                            binding.headingWarningGasLevel.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        addEntry(binding.airQualityChart, 0f);
+                        binding.headingWarningGasLevel.setVisibility(View.GONE);
+                    }
+                    break;
+            }
         }
     }
 
@@ -228,5 +310,14 @@ public class DashboardFragment extends Fragment {
 
     private void clearChart(LineChart chart) {
         chart.clear();
+    }
+
+    private class MyReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Timber.e("me: " + intent.getStringExtra(Dashboard_Data));
+
+            init(intent.getStringExtra(Dashboard_Data));
+        }
     }
 }

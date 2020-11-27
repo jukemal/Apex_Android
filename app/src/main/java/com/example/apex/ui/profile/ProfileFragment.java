@@ -1,6 +1,7 @@
 package com.example.apex.ui.profile;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.apex.SplashActivity;
@@ -31,6 +34,8 @@ public class ProfileFragment extends Fragment {
     private final DocumentReference documentReferenceUser = db.collection("users")
             .document(firebaseAuth.getCurrentUser().getUid());
 
+    private static final int MAKE_CALL_PERMISSION_REQUEST_CODE = 1;
+
     private FragmentProfileBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -41,6 +46,10 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        if (!checkPermission()) {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.CALL_PHONE}, MAKE_CALL_PERMISSION_REQUEST_CODE);
+        }
 
         documentReferenceUser.get()
                 .addOnCompleteListener(task -> {
@@ -75,5 +84,28 @@ public class ProfileFragment extends Fragment {
 
             builder.show();
         });
+
+        binding.btnSOS.setOnClickListener(v -> {
+//            startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:1234567890")));
+
+//            LocalBroadcastManager localBroadcastManager=LocalBroadcastManager.getInstance(requireContext());
+//
+//            Intent intent=new Intent(LocationUpdatesService.MSERVICEBROADCASTRECEIVERACTION);
+//            intent.putExtra("data","fjfj");
+//            localBroadcastManager.sendBroadcast(intent);
+        });
+    }
+
+    private boolean checkPermission() {
+        return ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == MAKE_CALL_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                Toast.makeText(requireContext(), "You can call the number by clicking on the button", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

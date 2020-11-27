@@ -2,16 +2,18 @@ package com.example.apex.viewadapters;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.apex.R;
 import com.example.apex.databinding.LayoutBluetoothRecyclerviewItemBinding;
+import com.example.apex.services.LocationUpdatesService;
 
 import java.util.List;
 
@@ -64,11 +66,13 @@ public class BluetoothRecyclerViewAdapter extends RecyclerView.Adapter<Bluetooth
             binding.txtDeviceMac.setText(bluetoothDevice.getAddress());
 
             itemView.setOnClickListener(v -> {
-                Bundle bundle = new Bundle();
-                bundle.putString("DEVICE_NAME", bluetoothDevice.getName());
-                bundle.putString("DEVICE_MAC", bluetoothDevice.getAddress());
-                navController.popBackStack(R.id.navigation_bluetooth, true);
-                navController.navigate(R.id.navigation_dashboard, bundle);
+                navController.navigate(R.id.navigation_dashboard);
+
+                LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
+
+                Intent intent = new Intent(LocationUpdatesService.MSERVICEBROADCASTRECEIVERACTION);
+                intent.putExtra("mac", bluetoothDevice.getAddress());
+                localBroadcastManager.sendBroadcast(intent);
             });
         }
     }
